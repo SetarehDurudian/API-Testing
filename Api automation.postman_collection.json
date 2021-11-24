@@ -1,0 +1,854 @@
+{
+	"info": {
+		"_postman_id": "9c10bdb9-25bf-41ce-8969-4799a8619172",
+		"name": "Api automation",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "merchant-info",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"//Get token\r",
+							"const echoPostRequest = {\r",
+							"    url: pm.environment.get(\"url\") + '/oauth/token',\r",
+							"    method: 'POST',\r",
+							"    header: {\r",
+							"        'Content-Type': 'multipart/form-data;charset=UTF-8',\r",
+							"        'Authorization': 'Basic bWMtY2xpZW50LWlkOm1jLXNlY3JldC0yNDhmNGIzYi01ZWM5LTQyYjAtOTlmMC1kMjNlMGMxNTQ3MDk=',\r",
+							"        'zone': 'dashboard'\r",
+							"    },\r",
+							"    body: {\r",
+							"        mode: 'formdata',\r",
+							"        formdata: [\r",
+							"            {\r",
+							"                key: \"username\",\r",
+							"                value: pm.environment.get(\"username\"),\r",
+							"                disabled: false,\r",
+							"                description: { content: \"\", type: \"text/plain\" }\r",
+							"            },\r",
+							"            {\r",
+							"                key: \"password\",\r",
+							"                value: pm.environment.get(\"password\"),\r",
+							"                disabled: false,\r",
+							"                description: { content: \"\", type: \"text/plain\" }\r",
+							"            },\r",
+							"            {\r",
+							"                key: \"grant_type\",\r",
+							"                value: \"password\",\r",
+							"                disabled: false,\r",
+							"                description: { content: \"\", type: \"text/plain\" }\r",
+							"            }\r",
+							"        ]\r",
+							"    }\r",
+							"};\r",
+							"//Set token\r",
+							"pm.sendRequest(echoPostRequest, function (err, res) {\r",
+							"    if (err) {\r",
+							"        console.log(err);\r",
+							"    } else {\r",
+							"        pm.environment.set(\"access_token\", res.json().access_token);\r",
+							"    }\r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"//Check status code\r",
+							"pm.test(\"status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"    let jsonData = pm.response.json();\r",
+							"\r",
+							"    //check username & imageId are equal\r",
+							"    let imageId = jsonData.shops[0].imageId;\r",
+							"    pm.environment.set(\"imageId\", imageId);\r",
+							"    console.log(pm.environment.get(\"imageId\"));\r",
+							"    console.log(pm.environment.get(\"username\"));\r",
+							"    pm.test(\"imageId is equal to username\", function () {\r",
+							"        pm.expect(imageId).to.equal(pm.environment.get(\"username\"))\r",
+							"    });\r",
+							"\r",
+							"    // Check response result\r",
+							"    let message = \"عملیات با موفقیت انجام شد\"\r",
+							"    let title = \"SUCCESS\"\r",
+							"    let status = 0\r",
+							"    let level = \"INFO\"\r",
+							"    pm.test(\"check result message \", function () {\r",
+							"        pm.expect(jsonData.result.message).to.eql(message);\r",
+							"        pm.expect(jsonData.result.title).to.eql(title);\r",
+							"        pm.expect(jsonData.result.status).to.eql(status);\r",
+							"        pm.expect(jsonData.result.level).to.eql(level);\r",
+							"    });\r",
+							"\r",
+							"    //Validate response body with jsonSchema\r",
+							"    let schema = {\r",
+							"        \"type\": \"object\",\r",
+							"        \"properties\": {\r",
+							"            \"result\": {\r",
+							"                \"type\": \"object\",\r",
+							"                \"properties\": {\r",
+							"                    \"title\": { \"type\": \"string\" },\r",
+							"                    \"status\": { \"type\": \"integer\" },\r",
+							"                    \"message\": { \"type\": \"string\" },\r",
+							"                    \"level\": { \"type\": \"string\" }\r",
+							"                },\r",
+							"                \"required\": [\"status\", \"message\", \"title\", \"level\"],\r",
+							"                \"additionalProperties\": false\r",
+							"            },\r",
+							"            \"type\": { \"type\": \"integer\" },\r",
+							"            \"merchantUid\": { \"type\": \"string\" },\r",
+							"            \"name\": { \"type\": \"string\" },\r",
+							"            \"shops\": {\r",
+							"                \"type\": \"array\",\r",
+							"                \"item\": [{\r",
+							"                    \"type\": \"object\",\r",
+							"                    \"properties\": {\r",
+							"                        \"name\": { \"type\": \"string\" },\r",
+							"                        \"imageId\": { \"type\": \"string\" },\r",
+							"                    },\r",
+							"                    \"required\": [\"name\", \"imageId\"],\r",
+							"                    \"additionalProperties\": false\r",
+							"                }],\r",
+							"            },\r",
+							"        },\r",
+							"        \"required\": [\"result\", \"type\",\"merchantUid\",\"name\",\"shops\"],\r",
+							"        \"additionalProperties\": false\r",
+							"    };\r",
+							"        pm.test(\"schema is validated\", () => {\r",
+							"            pm.response.to.have.jsonSchema(schema);\r",
+							"        });\r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{access_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "User-Id",
+						"value": "c12fa204-b7a4-4549-bee6-7a3b0dfceb4"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJhcGkubXlkaWdpcGF5LmNvbSIsImV4cCI6MTYyMjYzMDk0NCwidXNlcl9uYW1lIjoidGVzdC1zdGFmZi11c2VyIiwiYXV0aG9yaXRpZXMiOiI4OCw4OSwxMTAsMTExLDExMiwxMTMsLTI1MSwxMTQsMTE1LDExNiwxMTcsOTAsMTE4LDkxLDExOSw5Miw5Myw5NCw5NSw5Niw5NywxMCw5OCwxMSw5OSwxMiwxMywxNCwxNSwxNiwxNywxOCwxOSwxMjAsMCwxMjEsMSwxMjIsMTIzLDIsMTI0LDMsMTI1LDQsMTI2LDUsMTI3LDYsMTI4LDcsMTI5LDgsOSwyMCwyMSwyMiwyMywyNCwyNSwyNiwyNywyOCwyOSwxMzAsMTMxLDEzMiwxMzMsMTM0LDEzNSwxMzYsLTE1MSwxMzcsMTM4LDEzOSwzMCwzMSwzMiwzNSwzNiwzNywzOCwzOSwxNDEsMTQyLDE0MywxNDQsMTQ1LDE0NiwxNDcsMTQ4LDE0OSw0MCw0MSw0Miw0Niw0Nyw0OCw0OSwxNTAsMTUxLDE1MiwxNTMsMTU0LDE1NSwxNTYsMTU3LDE1OCwxNTksNTAsNTEsNTIsNTMsNTQsNTYsNTcsNTgsLTEsNTksLTIsLTMsMTYwLDE2MSwxNjIsMTYzLC0xMDEsNjAsNjEsNjIsNjMsNjQsNjUsNjYsNjcsNjgsNjksNzAsNzEsNzIsNzMsNzQsNzUsNzYsNzcsNzgsNzksMTAwLDEwMSwxMDIsMTAzLDEwNCwxMDUsMTA2LDEwNyw4MCwxMDgsODEsMTA5LDgyLDgzLDg0LDg1LDg2LDg3IiwiY2xpZW50X2lkIjoiZGlnaXBheS1jbGllbnQtaWQifQ.SICqElumJ32xjiOEnrjoxnNF6m5pvshH8Z1K6Ou6BGT1_uL1k3qJUf01e57-rtJfm0M5T81xL8_brMNMb6BvBcqzq8gf3AaPZ-zDqfuer4-YRFcv3Jzdbl8xqSvqDtXnVFjPsZBiesBR7J8sF-dQH454FFu0quzV4c5yumhcBjLvwk7OSVmzL6Nfyv_YQer_xiSPC83FioeyUhC6G--K9-sUnOwnqdF8WsqFnhQs2Atw-vmDGrnrBCwm2UHaR10MuUMvd9omDKhcK9dzz8Deg_Mjw1SdvRp618LuvAtNYbqY4MIEJunzh1WjKzI8XRGL2FBYURtS_Fm2wdJh7JYTAA",
+						"disabled": true
+					}
+				],
+				"url": {
+					"raw": "{{url}}/merchant/activations/merchant-info",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"merchant",
+						"activations",
+						"merchant-info"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "activation-detail",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"//Check status code\r",
+							"pm.test(\"status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"    let jsonData = pm.response.json();\r",
+							"\r",
+							"    // Check response result\r",
+							"    let message = \"عملیات با موفقیت انجام شد\"\r",
+							"    let title = \"SUCCESS\"\r",
+							"    let status = 0\r",
+							"    let level = \"INFO\"\r",
+							"    pm.test(\"check result message \", function () {\r",
+							"        pm.expect(jsonData.result.message).to.eql(message);\r",
+							"        pm.expect(jsonData.result.title).to.eql(title);\r",
+							"        pm.expect(jsonData.result.status).to.eql(status);\r",
+							"        pm.expect(jsonData.result.level).to.eql(level);\r",
+							"    });\r",
+							"\r",
+							"    //Get \"activationId\" from response body\r",
+							"    pm.environment.set(\"activationId\", jsonData.detail.activationId);\r",
+							"    console.log(pm.environment.get(\"activationId\"));\r",
+							"\r",
+							"    //check username & email are equal\r",
+							"    let email = jsonData.detail.merchantInfo.email;\r",
+							"    pm.environment.set(\"email\", email);\r",
+							"    console.log(pm.environment.get(\"email\"));\r",
+							"    console.log(pm.environment.get(\"username\"));\r",
+							"    pm.test(\"email is equal to username\", function () {\r",
+							"        pm.expect(email).to.equal(pm.environment.get(\"username\"))\r",
+							"    });\r",
+							"\r",
+							"    //Validate response body with jsonSchema\r",
+							"    let schema = {\r",
+							"        \"type\": \"object\",\r",
+							"        \"properties\": {\r",
+							"            \"result\": {\r",
+							"                \"type\": \"object\",\r",
+							"                \"properties\": {\r",
+							"                    \"title\": { \"type\": \"string\" },\r",
+							"                    \"status\": { \"type\": \"integer\" },\r",
+							"                    \"message\": { \"type\": \"string\" },\r",
+							"                    \"level\": { \"type\": \"string\" }\r",
+							"                },\r",
+							"                \"required\": [\"status\", \"message\", \"title\", \"level\"],\r",
+							"                \"additionalProperties\": false\r",
+							"            },\r",
+							"            \"detail\": {\r",
+							"                \"type\": \"object\",\r",
+							"                \"properties\": {\r",
+							"                    \"activationId\": { \"type\": \"string\" },\r",
+							"                    \"editStatus\": { \"type\": \"integer\" },\r",
+							"                    \"merchantInfo\": {\r",
+							"                        \"type\": \"object\",\r",
+							"                        \"properties\": {\r",
+							"                            \"merchantId\": { \"type\": \"string\" },\r",
+							"                            \"type\": { \"type\": \"integer\" },\r",
+							"                            \"name\": {\r",
+							"                                \"type\": \"object\",\r",
+							"                                \"properties\": {\r",
+							"                                    \"value\": { \"value\": \"string\" },\r",
+							"                                    \"status\": { \"type\": \"integer\" },\r",
+							"                                },\r",
+							"                                \"required\": [\"value\", \"status\"],\r",
+							"                                \"additionalProperties\": true\r",
+							"                            },\r",
+							"                            \"email\": { \"type\": \"string\" },\r",
+							"                            \"nationalLegalCode\": {\r",
+							"                                \"type\": \"object\",\r",
+							"                                \"properties\": {\r",
+							"                                    \"value\": { \"value\": \"string\" },\r",
+							"                                    \"status\": { \"type\": \"integer\" },\r",
+							"                                },\r",
+							"                                \"required\": [\"value\", \"status\"],\r",
+							"                                \"additionalProperties\": true\r",
+							"                            },\r",
+							"                            \"agent\": {\r",
+							"                                \"type\": \"object\",\r",
+							"                                \"properties\": {\r",
+							"                                    \"name\": {\r",
+							"                                        \"type\": \"object\",\r",
+							"                                        \"properties\": {\r",
+							"                                            \"value\": { \"value\": \"string\" },\r",
+							"                                            \"status\": { \"type\": \"integer\" },\r",
+							"                                        },\r",
+							"                                        \"required\": [\"value\", \"status\"],\r",
+							"                                        \"additionalProperties\": true\r",
+							"                                    },\r",
+							"                                    \"surname\": {\r",
+							"                                        \"type\": \"object\",\r",
+							"                                        \"properties\": {\r",
+							"                                            \"value\": { \"value\": \"string\" },\r",
+							"                                            \"status\": { \"type\": \"integer\" },\r",
+							"                                        },\r",
+							"                                        \"required\": [\"value\", \"status\"],\r",
+							"                                        \"additionalProperties\": true\r",
+							"                                    },\r",
+							"                                    \"nationalCode\": {\r",
+							"                                        \"type\": \"object\",\r",
+							"                                        \"properties\": {\r",
+							"                                            \"value\": { \"value\": \"string\" },\r",
+							"                                            \"status\": { \"type\": \"integer\" },\r",
+							"                                        },\r",
+							"                                        \"required\": [\"value\", \"status\"],\r",
+							"                                        \"additionalProperties\": true\r",
+							"                                    },\r",
+							"                                    \"cellNumber\": {\r",
+							"                                        \"type\": \"object\",\r",
+							"                                        \"properties\": {\r",
+							"                                            \"value\": { \"value\": \"string\" },\r",
+							"                                            \"status\": { \"type\": \"integer\" },\r",
+							"                                        },\r",
+							"                                        \"required\": [\"value\", \"status\"],\r",
+							"                                        \"additionalProperties\": true\r",
+							"                                    },\r",
+							"                                    \"birthDate\": {\r",
+							"                                        \"type\": \"object\",\r",
+							"                                        \"properties\": {\r",
+							"                                            \"value\": { \"value\": \"integer\" },\r",
+							"                                            \"status\": { \"type\": \"integer\" },\r",
+							"                                        },\r",
+							"                                        \"required\": [\"value\", \"status\"],\r",
+							"                                        \"additionalProperties\": true\r",
+							"                                    },\r",
+							"                                },\r",
+							"                                \"required\": [\"name\", \"surname\", \"nationalCode\", \"cellNumber\", \"birthDate\"],\r",
+							"                                \"additionalProperties\": false\r",
+							"                            },\r",
+							"                        },\r",
+							"                        \"required\": [\"merchantId\", \"type\", \"name\", \"nationalLegalCode\", \"agent\"],\r",
+							"                        \"additionalProperties\": true\r",
+							"                    },\r",
+							"                },\r",
+							"                \"required\": [\"activationId\", \"editStatus\", \"merchantInfo\"],\r",
+							"                \"additionalProperties\": true\r",
+							"            },\r",
+							"        },\r",
+							"    };\r",
+							"    pm.test(\"schema is validated\", () => {\r",
+							"        pm.response.to.have.jsonSchema(schema);\r",
+							"    });\r",
+							"});\r",
+							""
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"//Get token\r",
+							"const echoPostRequest = {\r",
+							"    url: pm.environment.get(\"url\") + '/oauth/token',\r",
+							"    method: 'POST',\r",
+							"    header: {\r",
+							"        'Content-Type': 'multipart/form-data;charset=UTF-8',\r",
+							"        'Authorization': 'Basic bWMtY2xpZW50LWlkOm1jLXNlY3JldC0yNDhmNGIzYi01ZWM5LTQyYjAtOTlmMC1kMjNlMGMxNTQ3MDk=',\r",
+							"        'zone': 'dashboard'\r",
+							"    },\r",
+							"    body: {\r",
+							"        mode: 'formdata',\r",
+							"        formdata: [\r",
+							"            {\r",
+							"                key: \"username\",\r",
+							"                value: pm.environment.get(\"username\"),\r",
+							"                disabled: false,\r",
+							"                description: { content: \"\", type: \"text/plain\" }\r",
+							"            },\r",
+							"            {\r",
+							"                key: \"password\",\r",
+							"                value: pm.environment.get(\"password\"),\r",
+							"                disabled: false,\r",
+							"                description: { content: \"\", type: \"text/plain\" }\r",
+							"            },\r",
+							"            {\r",
+							"                key: \"grant_type\",\r",
+							"                value: \"password\",\r",
+							"                disabled: false,\r",
+							"                description: { content: \"\", type: \"text/plain\" }\r",
+							"            }\r",
+							"        ]\r",
+							"    }\r",
+							"};\r",
+							"//Set token\r",
+							"pm.sendRequest(echoPostRequest, function (err, res) {\r",
+							"    if (err) {\r",
+							"        console.log(err);\r",
+							"    } else {\r",
+							"        pm.environment.set(\"access_token\", res.json().access_token);\r",
+							"    }\r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{access_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJhcGkubXlkaWdpcGF5LmNvbSIsImV4cCI6MTYxNTA5MTQ4MCwidXNlcl9uYW1lIjoidGVzdC1zdGFmZi11c2VyIiwiYXV0aG9yaXRpZXMiOiI4OCw4OSwxMTAsMTExLDExMiwxMTMsLTI1MSwxMTQsMTE1LDExNiwxMTcsOTAsMTE4LDkxLDExOSw5Miw5Myw5NCw5NSw5Niw5NywxMCw5OCwxMSw5OSwxMiwxMywxNCwxNSwxNiwxNywxOCwxOSwxMjAsMCwxMjEsMSwxMjIsMTIzLDIsMTI0LDMsMTI1LDQsMTI2LDUsMTI3LDYsMTI4LDcsMTI5LDgsOSwyMCwyMSwyMiwyMywyNCwyNSwyNiwyNywyOCwyOSwxMzAsMTMxLDEzMiwxMzMsMTM0LDEzNSwxMzYsLTE1MSwxMzcsMTM4LDMwLDMxLDMyLDM1LDM2LDM3LDM4LDM5LDE0OCw0MCw0MSw0NSw0Niw0Nyw0OCw0OSwxNTEsMTUyLDE1MywxNTQsNTAsNTEsNTIsNTMsNTUsNTYsNTcsNTgsLTEsNTksLTIsLTMsLTEwMSw2MCw2MSw2Miw2Myw2NCw2NSw2Niw2Nyw2OCw2OSw3MCw3MSw3Miw3Myw3NCw3NSw3Niw3Nyw3OCw3OSwxMDAsMTAxLDEwMiwxMDMsMTA0LDEwNSwxMDYsMTA3LDgwLDEwOCw4MSwxMDksODIsODMsODQsODUsODYsODciLCJjbGllbnRfaWQiOiJkaWdpcGF5LWNsaWVudC1pZCJ9.HlpwiGWImK31dEEcHscnABZePWOYYE2b3_KfD78qyP5KR6pOfy3gPBO5irI-8sRMXwW_9xRJadUfyTPZNNL2MuGaNqfxanKuS6FMxyXZDk3fO3KWXCQQ2rQoB8jjzF9jEqUCTR7AXEO9iGJY1jdx3pE2WY-lXdlELgq7H3rfznAEhMIO5-rTYPiqwlXIkFIR6iolYOG8PmpKoh4cdbsy02TzYP4v76A7u3IUECcPGxX8kGaGv5-wLpDt2lQUMFJgC19iVJ9LOoX70jgnUYZRfDVnn7XE_Z1qtKrCSCtZX5aGVJe8ADzEWjYrtGDhIRe2EQxhuFuYWSe3cUIO6GR-lw"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "{{url}}/merchant/activations",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"merchant",
+						"activations"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "profile-state",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"//Get token\r",
+							"const echoPostRequest = {\r",
+							"    url: pm.environment.get(\"url\") + '/oauth/token',\r",
+							"    method: 'POST',\r",
+							"    header: {\r",
+							"        'Content-Type': 'multipart/form-data;charset=UTF-8',\r",
+							"        'Authorization': 'Basic bWMtY2xpZW50LWlkOm1jLXNlY3JldC0yNDhmNGIzYi01ZWM5LTQyYjAtOTlmMC1kMjNlMGMxNTQ3MDk=',\r",
+							"        'zone': 'dashboard'\r",
+							"    },\r",
+							"    body: {\r",
+							"        mode: 'formdata',\r",
+							"        formdata: [\r",
+							"            {\r",
+							"                key: \"username\",\r",
+							"                value: pm.environment.get(\"username\"),\r",
+							"                disabled: false,\r",
+							"                description: { content: \"\", type: \"text/plain\" }\r",
+							"            },\r",
+							"            {\r",
+							"                key: \"password\",\r",
+							"                value: pm.environment.get(\"password\"),\r",
+							"                disabled: false,\r",
+							"                description: { content: \"\", type: \"text/plain\" }\r",
+							"            },\r",
+							"            {\r",
+							"                key: \"grant_type\",\r",
+							"                value: \"password\",\r",
+							"                disabled: false,\r",
+							"                description: { content: \"\", type: \"text/plain\" }\r",
+							"            }\r",
+							"        ]\r",
+							"    }\r",
+							"};\r",
+							"//Set token\r",
+							"pm.sendRequest(echoPostRequest, function (err, res) {\r",
+							"    if (err) {\r",
+							"        console.log(err);\r",
+							"    } else {\r",
+							"        pm.environment.set(\"access_token\", res.json().access_token);\r",
+							"    }\r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"//Check status code\r",
+							"pm.test(\"status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"    let jsonData = pm.response.json();\r",
+							"\r",
+							"    //Check response result\r",
+							"    let message = \"عملیات با موفقیت انجام شد\"\r",
+							"    let title = \"SUCCESS\"\r",
+							"    let status = 0\r",
+							"    let level = \"INFO\"\r",
+							"    pm.test(\"check result message \", function () {\r",
+							"        pm.expect(jsonData.result.message).to.eql(message);\r",
+							"        pm.expect(jsonData.result.title).to.eql(title);\r",
+							"        pm.expect(jsonData.result.status).to.eql(status);\r",
+							"        pm.expect(jsonData.result.level).to.eql(level);\r",
+							"    });\r",
+							"\r",
+							"    //Validate response body with jsonSchema\r",
+							"    let schema = {\r",
+							"        \"type\": \"object\",\r",
+							"        \"properties\": {\r",
+							"            \"result\": {\r",
+							"                \"type\": \"object\",\r",
+							"                \"properties\": {\r",
+							"                    \"title\": { \"type\": \"string\" },\r",
+							"                    \"status\": { \"type\": \"integer\" },\r",
+							"                    \"message\": { \"type\": \"string\" },\r",
+							"                    \"level\": { \"type\": \"string\" }\r",
+							"                },\r",
+							"                \"required\": [\"status\", \"message\", \"title\", \"level\"],\r",
+							"                \"additionalProperties\": false\r",
+							"            },\r",
+							"            \"profileStateDetail\": {\r",
+							"                \"type\": \"object\",\r",
+							"                \"properties\": {\r",
+							"                    \"items\": {\r",
+							"                        \"type\": \"array\",\r",
+							"                        \"item\": [{\r",
+							"                            \"type\": \"object\",\r",
+							"                            \"properties\": {\r",
+							"                                \"type\": { \"type\": \"integer\" },\r",
+							"                                \"status\": { \"type\": \"integer\" },\r",
+							"                            },\r",
+							"                        }],\r",
+							"                    },\r",
+							"                },\r",
+							"                \"required\": [\"items\"],\r",
+							"                \"additionalProperties\": false\r",
+							"            },\r",
+							"            \"status\": {\r",
+							"                \"type\": \"integer\"\r",
+							"            },\r",
+							"        },\r",
+							"        \"required\": [\"result\", \"profileStateDetail\", \"status\"],\r",
+							"        \"additionalProperties\": false\r",
+							"    };\r",
+							"    pm.test(\"schema is validated\", () => {\r",
+							"        pm.response.to.have.jsonSchema(schema);\r",
+							"    });\r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{access_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJhcGkubXlkaWdpcGF5LmNvbSIsImV4cCI6MTYxNTA0MTgyMiwidXNlcl9uYW1lIjoidGVzdC1zdGFmZi11c2VyIiwiYXV0aG9yaXRpZXMiOiI4OCw4OSwxMTAsMTExLDExMiwxMTMsLTI1MSwxMTQsMTE1LDExNiwxMTcsOTAsMTE4LDkxLDExOSw5Miw5Myw5NCw5NSw5Niw5NywxMCw5OCwxMSw5OSwxMiwxMywxNCwxNSwxNiwxNywxOCwxOSwxMjAsMCwxMjEsMSwxMjIsMTIzLDIsMTI0LDMsMTI1LDQsMTI2LDUsMTI3LDYsMTI4LDcsMTI5LDgsOSwyMCwyMSwyMiwyMywyNCwyNSwyNiwyNywyOCwyOSwxMzAsMTMxLDEzMiwxMzMsMTM0LDEzNSwxMzYsLTE1MSwxMzcsMTM4LDMwLDMxLDMyLDM1LDM2LDM3LDM4LDM5LDE0OCw0MCw0MSw0NSw0Niw0Nyw0OCw0OSwxNTEsMTUyLDE1MywxNTQsNTAsNTEsNTIsNTMsNTUsNTYsNTcsNTgsLTEsNTksLTIsLTMsLTEwMSw2MCw2MSw2Miw2Myw2NCw2NSw2Niw2Nyw2OCw2OSw3MCw3MSw3Miw3Myw3NCw3NSw3Niw3Nyw3OCw3OSwxMDAsMTAxLDEwMiwxMDMsMTA0LDEwNSwxMDYsMTA3LDgwLDEwOCw4MSwxMDksODIsODMsODQsODUsODYsODciLCJjbGllbnRfaWQiOiJkaWdpcGF5LWNsaWVudC1pZCJ9.Z4ljziHvcIVkW-lAgpID7Qicq9o-CiXMdCF07zZwTh3QtHxgbTfwmNx5PrzwfJ4kfEg6eTsbUlHvAPpxaK0-bwv2xluDn-VtX6w8rk2e2agOyqO-VspEl7ikJQ3Pj3l5c4uYR72InTNIrXa2dr6QyikP6PoU6_R-lg1FkZRJfDLGcsRVUI0jBHe3xGWygzXOxn42ZekXLI2ef6hxeThase1wQ2dw4N4xD0gAlodzdTizpNPK-xXjmvokuJS0ZF2rJlBN_xSnHlZxkxcEKqGoEMA42XHx2CPavTrJkQ-7m_mVlwogEzgAr7c4q621thwswKe7OlJ581xdcQlBYoETWQ"
+					}
+				],
+				"url": {
+					"raw": "{{url}}/merchant/activations/{{activationId}}/profile/state",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"merchant",
+						"activations",
+						"{{activationId}}",
+						"profile",
+						"state"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "update-merchant-business",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"//Get an environmen variable\r",
+							"activationId = pm.environment.get(\"activationId\");\r",
+							"\r",
+							"//Check status code\r",
+							"pm.test(\"status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"    let jsonData = pm.response.json();\r",
+							"\r",
+							"    //Check response result\r",
+							"    let message = \"عملیات با موفقیت انجام شد\"\r",
+							"    let title = \"SUCCESS\"\r",
+							"    let status = 0\r",
+							"    let level = \"INFO\"\r",
+							"    pm.test(\"check result message \", function () {\r",
+							"        pm.expect(jsonData.result.message).to.eql(message);\r",
+							"        pm.expect(jsonData.result.title).to.eql(title);\r",
+							"        pm.expect(jsonData.result.status).to.eql(status);\r",
+							"        pm.expect(jsonData.result.level).to.eql(level);\r",
+							"    });\r",
+							"    //Validate response body with jsonSchema\r",
+							"    let schema = {\r",
+							"        \"type\": \"object\",\r",
+							"        \"properties\": {\r",
+							"            \"result\": {\r",
+							"                \"type\": \"object\",\r",
+							"                \"properties\": {\r",
+							"                    \"title\": { \"type\": \"string\" },\r",
+							"                    \"status\": { \"type\": \"integer\" },\r",
+							"                    \"message\": { \"type\": \"string\" },\r",
+							"                    \"level\": { \"type\": \"string\" }\r",
+							"                },\r",
+							"                \"required\": [\"status\", \"message\", \"title\", \"level\"],\r",
+							"                \"additionalProperties\": false\r",
+							"            },\r",
+							"        },\r",
+							"    };\r",
+							"    pm.test(\"schema is validated\", () => {\r",
+							"        pm.response.to.have.jsonSchema(schema);\r",
+							"    });\r",
+							"\r",
+							"    //Get businessName from request body to compare with stored value in DB\r",
+							"    let businessName = JSON.parse(pm.request.body.raw).businessName;\r",
+							"    pm.collectionVariables.set(\"businessName\", businessName);\r",
+							"    console.log(pm.collectionVariables.get(\"businessName\"));\r",
+							"\r",
+							"    //Get businessNameEn from the request body to compare with the stored value in DB\r",
+							"    let businessNameEn = JSON.parse(pm.request.body.raw).businessNameEn;\r",
+							"    pm.collectionVariables.set(\"businessNameEn\", businessNameEn);\r",
+							"    console.log(pm.collectionVariables.get(\"businessNameEn\"));\r",
+							"\r",
+							"    //Get nationalLegalCode from the request body to compare with the stored value in DB\r",
+							"    let nationalLegalCode = JSON.parse(pm.request.body.raw).nationalLegalCode;\r",
+							"    pm.collectionVariables.set(\"nationalLegalCode\", nationalLegalCode);\r",
+							"    console.log(pm.collectionVariables.get(\"nationalLegalCode\"));\r",
+							"\r",
+							"    //Get phone from the request body to compare with the stored value in DB\r",
+							"    let phone = JSON.parse(pm.request.body.raw).phone;\r",
+							"    pm.collectionVariables.set(\"phone\", phone);\r",
+							"    console.log(pm.collectionVariables.get(\"phone\"));\r",
+							"\r",
+							"    //Get registerDate from the request body to compare with the stored value in DB\r",
+							"    let registerDate = JSON.parse(pm.request.body.raw).registerDate;\r",
+							"    pm.collectionVariables.set(\"registerDate\", registerDate);\r",
+							"    console.log(pm.collectionVariables.get(\"registerDate\"));\r",
+							"\r",
+							"    //call find from merchant_mng_db\r",
+							"    pm.sendRequest({\r",
+							"        url: 'https://uatqa.mydigipay.info/mongodb/find/merchant_mng_db/activations',\r",
+							"        method: 'POST',\r",
+							"        header: {\r",
+							"            'Content-Type': 'application/json;charset=UTF-8',\r",
+							"        },\r",
+							"        body: {\r",
+							"            mode: 'raw',\r",
+							"            raw: JSON.stringify(\r",
+							"                {\r",
+							"                    \"uid\": activationId\r",
+							"                })\r",
+							"        }\r",
+							"    }, function (err, res) {\r",
+							"        if (err) {\r",
+							"            console.log(err);\r",
+							"            pm.test(\"Check Error\", function () {\r",
+							"                pm.expect.fail(\"Can't connect to the database, Error code :\" + err.code);\r",
+							"            });\r",
+							"        } else {\r",
+							"            console.log(res);\r",
+							"            pm.test(\"Check DB For activationId\", function () {\r",
+							"                pm.expect(activationId).to.eql(res.json()[0].uid);\r",
+							"            });\r",
+							"            pm.test(\"Check DB For businessName\", function () {\r",
+							"                pm.expect(businessName).to.eql(res.json()[0].merchant.name.value);\r",
+							"            });\r",
+							"            pm.test(\"Check DB For businessNameEn\", function () {\r",
+							"                pm.expect(businessNameEn).to.eql(res.json()[0].merchant.nameEn.value);\r",
+							"            });\r",
+							"            pm.test(\"Check DB For nationalLegalCode\", function () {\r",
+							"                pm.expect(nationalLegalCode).to.eql(res.json()[0].merchant.nationalLegalCode.value);\r",
+							"            });\r",
+							"            pm.test(\"Check DB For phone\", function () {\r",
+							"                pm.expect(phone).to.eql(res.json()[0].merchant.phone.value);\r",
+							"            });\r",
+							"            pm.test(\"Check DB For registerDate\", function () {\r",
+							"                pm.expect(registerDate).to.eql(parseInt((res.json()[0].merchant.registerDate.value.$numberLong)));\r",
+							"            });\r",
+							"        }\r",
+							"    });\r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"//Create random number\r",
+							"function randomIntFromInterval(min, max) { \r",
+							"    // min and max included \r",
+							"    return Math.floor(Math.random() * (max - min + 1) + min);\r",
+							"}\r",
+							"let randomNumber = randomIntFromInterval(9000000000, 9999999999);\r",
+							"pm.environment.set(\"randomNumber\", randomNumber);\r",
+							"\r",
+							"//Get token\r",
+							"const echoPostRequest = {\r",
+							"    url: pm.environment.get(\"url\") + '/oauth/token',\r",
+							"    method: 'POST',\r",
+							"    header: {\r",
+							"        'Content-Type': 'multipart/form-data;charset=UTF-8',\r",
+							"        'Authorization': 'Basic bWMtY2xpZW50LWlkOm1jLXNlY3JldC0yNDhmNGIzYi01ZWM5LTQyYjAtOTlmMC1kMjNlMGMxNTQ3MDk=',\r",
+							"        'zone': 'dashboard'\r",
+							"    },    \r",
+							"    body: {\r",
+							"        mode: 'formdata',\r",
+							"        formdata: [\r",
+							"            {\r",
+							"                key: \"username\",\r",
+							"                value: pm.environment.get(\"username\"),\r",
+							"                disabled: false,\r",
+							"                description: { content: \"\", type: \"text/plain\" }\r",
+							"            },\r",
+							"            {\r",
+							"                key: \"password\",\r",
+							"                value: pm.environment.get(\"password\"),\r",
+							"                disabled: false,\r",
+							"                description: { content: \"\", type: \"text/plain\" }\r",
+							"            },\r",
+							"            {\r",
+							"                key: \"grant_type\",\r",
+							"                value: \"password\",\r",
+							"                disabled: false,\r",
+							"                description: { content: \"\", type: \"text/plain\" }\r",
+							"            }\r",
+							"        ]\r",
+							"    }\r",
+							"};\r",
+							"//Set token\r",
+							"pm.sendRequest(echoPostRequest, function (err, res) {\r",
+							"    if (err) {\r",
+							"        console.log(err);\r",
+							"    } else {\r",
+							"        pm.environment.set(\"access_token\", res.json().access_token);\r",
+							"    }\r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{access_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json"
+					},
+					{
+						"key": "User-Id",
+						"value": "44da8324-67b1-44e4-a399-9f3bc18eafae",
+						"disabled": true
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"cellNumber\":\"09194842285\",\n    \"birthDate\": 593209800000,\n    \"name\": \"علی\",\n    \"surname\": \"قاسم زاده\",\n    \"nationalCode\": \"0082586403\",\n    \"phone\": \"021-56322256\",\n    \"nationalLegalCode\": \"5214587455\",\n    \"businessName\": \"دیجیکالا\",\n    \"businessNameEn\": \"digikala\",\n    \"registerDate\": 1445373000000,\n    \"type\": \"business\"\n}"
+				},
+				"url": {
+					"raw": "{{url}}/merchant/activations/{{activationId}}",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"merchant",
+						"activations",
+						"{{activationId}}"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "access_token",
+			"value": ""
+		},
+		{
+			"key": "url",
+			"value": ""
+		},
+		{
+			"key": "successful_message",
+			"value": ""
+		},
+		{
+			"key": "successful_status",
+			"value": ""
+		},
+		{
+			"key": "businessId",
+			"value": ""
+		},
+		{
+			"key": "cellNumber",
+			"value": ""
+		},
+		{
+			"key": "businessName",
+			"value": ""
+		},
+		{
+			"key": "businessNameEn",
+			"value": ""
+		},
+		{
+			"key": "nationalLegalCode",
+			"value": ""
+		},
+		{
+			"key": "phone",
+			"value": ""
+		},
+		{
+			"key": "registerDate",
+			"value": ""
+		}
+	]
+}
